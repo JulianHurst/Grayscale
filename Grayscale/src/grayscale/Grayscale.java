@@ -167,14 +167,19 @@ public class Progress extends Thread{
         add.setOnAction((ActionEvent event) -> {
             int start = files.size();
             List<File> L = fileChooser.showOpenMultipleDialog(new Stage());
-            for(int i=0;i<L.size();i++)
-                files.add(L.get(i));
-            for(int i=start;i<files.size();i++)
-                items.add(files.get(i).toString());
+            if(L!=null){
+                for(int i=0;i<L.size();i++)
+                    files.add(L.get(i));
+                for(int i=start;i<files.size();i++)
+                    items.add(files.get(i).toString());            
+                pb.setVisible(false);
+            }
         });
         rm.setText("Remove");
         rm.setOnAction((ActionEvent event) -> {
-            Object[] item = list.getSelectionModel().getSelectedItems().toArray();                        
+            Object[] item = list.getSelectionModel().getSelectedItems().toArray(); 
+            if(item.length!=0)                
+                pb.setVisible(false);
             for (Object item1 : item) {
                 items.remove(item1.toString());                
                 for(int i=0;i<files.size();i++)
