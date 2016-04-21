@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package grayscale_mac;
+package grayscale;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,48 +48,62 @@ public class Grayscale extends Application {
 public class Progress extends Thread{       
     
     @Override
-    public void run(){
-        Platform.runLater(() -> pb.setVisible(true));
+    public void run(){        
         ProcessBuilder p;   
         Process proc;        
         String noext,ext;   
         boolean error=false;
-        for(prog=0;prog<files.size() && !error;prog++){                    
-            if(!error){
-                try {                      
-                    double d=(1/((double)files.size()/(prog+1)));                    
-                    Platform.runLater(() -> pb.setProgress(d));                    
-                    if(files.get(prog).getAbsolutePath().contains(".")){
-                        noext=files.get(prog).getAbsolutePath().substring(0, files.get(prog).getAbsolutePath().lastIndexOf('.'));
-                        ext=files.get(prog).getAbsolutePath().substring(files.get(prog).getAbsolutePath().lastIndexOf('.'), files.get(prog).getAbsolutePath().length());
-                    }
-                    else{
-                        noext=files.get(prog).getAbsolutePath();
-                        ext="";
-                    }                                        
-                    p=new ProcessBuilder("/opt/local/bin/convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
-                    proc=p.start();
-                    proc.waitFor();
-                    InputStream in = proc.getInputStream();
-                    if(proc.exitValue()!=0){
-                        error=true;
-                        Platform.runLater(() -> {
-                            alert= new Alert(AlertType.ERROR);
-                            alert.setHeaderText("Error during conversion !");
-                            alert.setContentText("The file "+files.get(prog).getAbsolutePath()+" could not be converted ! Check if the file is not an image file and/or is not corrupted. If this error still appears ImageMagick may not be able to convert this image.");
-                            alert.showAndWait();
-                        });                                                
-                    }
-                } catch (IOException | InterruptedException ex) {
-                    Logger.getLogger(Grayscale.class.getName()).log(Level.SEVERE, null, ex);                    
+        try {           
+            for(prog=0;prog<files.size() && !error;prog++){                    
+                p=new ProcessBuilder("/opt/local/bin/identify",files.get(prog).getAbsolutePath());
+                proc=p.start();
+                proc.waitFor();
+                if(proc.exitValue()!=0){
+                    error=true;
+                    Platform.runLater(() -> {
+                        alert= new Alert(AlertType.WARNING);
+                        alert.setHeaderText("Not an image file !");
+                        alert.setContentText("The file "+files.get(prog).getAbsolutePath()+" is not an image file !");
+                        alert.showAndWait();
+                    });
+                }
+            }
+            if(!error)
+                Platform.runLater(() -> pb.setVisible(true));
+            for(prog=0;prog<files.size() && !error;prog++){                                                       
+                        double d=(1/((double)files.size()/(prog+1)));                    
+                        Platform.runLater(() -> pb.setProgress(d));                    
+                        if(files.get(prog).getAbsolutePath().contains(".")){
+                            noext=files.get(prog).getAbsolutePath().substring(0, files.get(prog).getAbsolutePath().lastIndexOf('.'));
+                            ext=files.get(prog).getAbsolutePath().substring(files.get(prog).getAbsolutePath().lastIndexOf('.'), files.get(prog).getAbsolutePath().length());
+                        }
+                        else{
+                            noext=files.get(prog).getAbsolutePath();
+                            ext="";
+                        }                                        
+                        p=new ProcessBuilder("/opt/local/bin/convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
+                        proc=p.start();
+                        proc.waitFor();
+                        InputStream in = proc.getInputStream();
+                        if(proc.exitValue()!=0){
+                            error=true;
+                            Platform.runLater(() -> {
+                                alert= new Alert(AlertType.ERROR);
+                                alert.setHeaderText("Error during conversion !");
+                                alert.setContentText("The file "+files.get(prog).getAbsolutePath()+" could not be converted ! Check if the file is not an image file and/or is not corrupted. If this error still appears ImageMagick may not be able to convert this image.");
+                                alert.showAndWait();
+                            });                                                
+                        }                                                  
+            }                            
+        } catch (IOException | InterruptedException ex) {
+                    Logger.getLogger(Grayscale.class.getName()).log(Level.SEVERE, null, ex);    
+                    error=true;
                     Platform.runLater(() -> {
                         alert= new Alert(AlertType.ERROR);
                         alert.setHeaderText("Exception thrown !");
                         alert.setContentText(ex.toString());
                         alert.showAndWait();
-                    });                                        
-                }
-            }                    
+                    });
         }
         if(!error){
             Platform.runLater(() -> {
@@ -132,26 +146,7 @@ public class Progress extends Thread{
         pb.setVisible(false);
         btn.setText("Apply Grayscale");
         btn.setOnAction((ActionEvent event) -> {
-            boolean error=false;
-            try {                
-                ProcessBuilder p;   
-                Process proc;                
-                String noext,ext;                                                                          
-                for(int i=0;i<files.size() && !error;i++){                    
-                    p=new ProcessBuilder("/opt/local/bin/identify",files.get(i).getAbsolutePath());
-                    proc=p.start();
-                    proc.waitFor();
-                    if(proc.exitValue()!=0){
-                        error=true;
-                        alert= new Alert(AlertType.WARNING);
-                        alert.setHeaderText("Not an image file !");
-                        alert.setContentText("The file "+files.get(i).getAbsolutePath()+" is not an image file !");
-                        alert.showAndWait();
-                    }
-                }
-            } catch (IOException | InterruptedException ex) {
-                Logger.getLogger(Grayscale.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            boolean error=false;            
             if(!error)
                 new Progress().start();                
         });
