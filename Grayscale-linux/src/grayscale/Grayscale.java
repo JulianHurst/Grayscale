@@ -79,12 +79,12 @@ public class Progress extends Thread{
                             noext=files.get(prog).getAbsolutePath();
                             ext="";
                         }                                        
-                        p=new ProcessBuilder("convert-im.exe",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);                                                                          
+                        p=new ProcessBuilder("convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
                         proc=p.start();
                         proc.waitFor();                        
                         if(proc.exitValue()!=0){
                             error=true;
-                            int i=prog;
+							int i=prog;
                             Platform.runLater(() -> {
                                 alert= new Alert(AlertType.ERROR);
                                 alert.setHeaderText("Error during conversion !");

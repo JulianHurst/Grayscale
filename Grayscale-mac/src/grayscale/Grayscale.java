@@ -7,13 +7,11 @@ package grayscale;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Application;
-import static javafx.application.Application.launch;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -87,10 +85,11 @@ public class Progress extends Thread{
                         InputStream in = proc.getInputStream();
                         if(proc.exitValue()!=0){
                             error=true;
+							int i=prog;
                             Platform.runLater(() -> {
                                 alert= new Alert(AlertType.ERROR);
                                 alert.setHeaderText("Error during conversion !");
-                                alert.setContentText("The file "+files.get(prog).getAbsolutePath()+" could not be converted ! Check if the file is not an image file and/or is not corrupted. If this error still appears ImageMagick may not be able to convert this image.");
+                                alert.setContentText("The file "+files.get(i).getAbsolutePath()+" could not be converted ! Check if the file is not an image file and/or is not corrupted. If this error still appears ImageMagick may not be able to convert this image.");
                                 alert.showAndWait();
                             });                                                
                         }                                                  
