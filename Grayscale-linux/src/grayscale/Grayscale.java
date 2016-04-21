@@ -87,7 +87,7 @@ public class Progress extends Thread{
                         if("Linux".equals(System.getProperty("os.name")))
                             p=new ProcessBuilder("convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
                         else if("Windows".equals(System.getProperty("os.name")))
-                            p=new ProcessBuilder("convertim",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
+                            p=new ProcessBuilder("convert-im",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
                         else
                             p=new ProcessBuilder("/opt/local/bin/convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
                         proc=p.start();
