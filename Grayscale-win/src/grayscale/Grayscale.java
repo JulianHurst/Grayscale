@@ -5,6 +5,7 @@
  */
 package grayscale;
 
+import java.awt.Toolkit;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -204,8 +205,8 @@ public class Progress extends Thread{
                 
         Scene scene = new Scene(root, 300, 250);
         primaryStage.setMinWidth(1000);
-        primaryStage.setMinHeight(800);
-        primaryStage.getIcons().add(new Image(getClass().getClassLoader().getResource("resources/G.png").toString()));
+        primaryStage.setMinHeight(800);        
+        primaryStage.getIcons().add(new Image(getClass().getClassLoader().getResource("resources/G.png").toString()));        
         primaryStage.setTitle("Grayscale");
         primaryStage.setScene(scene);
         primaryStage.show();        

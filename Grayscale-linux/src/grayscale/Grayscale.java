@@ -52,8 +52,12 @@ public class Progress extends Thread{
         String noext,ext;   
         boolean error=false;
         try {           
-            for(prog=0;prog<files.size() && !error;prog++){                    
-                p=new ProcessBuilder("identify",files.get(prog).getAbsolutePath());
+            for(prog=0;prog<files.size() && !error;prog++){   
+                if("Linux".equals(System.getProperty("os.name")) || "Windows".equals(System.getProperty("os.name")))
+                    p=new ProcessBuilder("identify",files.get(prog).getAbsolutePath());
+                else
+                    p=new ProcessBuilder("/opt/local/bin/identify",files.get(prog).getAbsolutePath());
+                System.out.println(System.getProperty("os.name"));
                 proc=p.start();
                 proc.waitFor();
                 if(proc.exitValue()!=0){
@@ -79,8 +83,13 @@ public class Progress extends Thread{
                         else{
                             noext=files.get(prog).getAbsolutePath();
                             ext="";
-                        }                                        
-                        p=new ProcessBuilder("convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
+                        } 
+                        if("Linux".equals(System.getProperty("os.name")))
+                            p=new ProcessBuilder("convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
+                        else if("Windows".equals(System.getProperty("os.name")))
+                            p=new ProcessBuilder("convertim",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
+                        else
+                            p=new ProcessBuilder("/opt/local/bin/convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
                         proc=p.start();
                         proc.waitFor();                        
                         if(proc.exitValue()!=0){
