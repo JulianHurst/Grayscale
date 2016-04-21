@@ -46,14 +46,18 @@ public class Grayscale extends Application {
 public class Progress extends Thread{       
     
     @Override
-    public void run(){        
-        ProcessBuilder p;   
+    public void run(){
+                ProcessBuilder p;   
         Process proc;        
         String noext,ext;   
         boolean error=false;
         try {           
-            for(prog=0;prog<files.size() && !error;prog++){                    
-                p=new ProcessBuilder("/opt/local/bin/identify",files.get(prog).getAbsolutePath());
+            for(prog=0;prog<files.size() && !error;prog++){   
+                if("Linux".equals(System.getProperty("os.name")) || System.getProperty("os.name").contains("Windows"))
+                    p=new ProcessBuilder("identify",files.get(prog).getAbsolutePath());
+                else
+                    p=new ProcessBuilder("/opt/local/bin/identify",files.get(prog).getAbsolutePath());
+                System.out.println(System.getProperty("os.name"));
                 proc=p.start();
                 proc.waitFor();
                 if(proc.exitValue()!=0){
@@ -79,8 +83,13 @@ public class Progress extends Thread{
                         else{
                             noext=files.get(prog).getAbsolutePath();
                             ext="";
-                        }                                        
-                        p=new ProcessBuilder("/opt/local/bin/convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
+                        } 
+                        if("Linux".equals(System.getProperty("os.name")))
+                            p=new ProcessBuilder("convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
+                        else if(System.getProperty("os.name").contains("Windows"))
+                            p=new ProcessBuilder("convert-im",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
+                        else
+                            p=new ProcessBuilder("/opt/local/bin/convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
                         proc=p.start();
                         proc.waitFor();                        
                         if(proc.exitValue()!=0){
@@ -204,7 +213,7 @@ public class Progress extends Thread{
                 
         Scene scene = new Scene(root, 300, 250);
         primaryStage.setMinWidth(1000);
-        primaryStage.setMinHeight(800);        
+        primaryStage.setMinHeight(800);
         primaryStage.getIcons().add(new Image(getClass().getClassLoader().getResource("resources/G.png").toString()));
         primaryStage.setTitle("Grayscale");
         primaryStage.setScene(scene);
