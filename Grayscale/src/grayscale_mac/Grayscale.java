@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package grayscale;
+package grayscale_mac;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Application;
+import static javafx.application.Application.launch;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -65,10 +66,8 @@ public class Progress extends Thread{
                     else{
                         noext=files.get(prog).getAbsolutePath();
                         ext="";
-                    }
-                    p=new ProcessBuilder("convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
-                    //For Crapintosh
-                    //p=new ProcessBuilder("/opt/local/bin/convert",files.get(i).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
+                    }                                        
+                    p=new ProcessBuilder("/opt/local/bin/convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
                     proc=p.start();
                     proc.waitFor();
                     InputStream in = proc.getInputStream();
@@ -138,10 +137,8 @@ public class Progress extends Thread{
                 ProcessBuilder p;   
                 Process proc;                
                 String noext,ext;                                                                          
-                for(int i=0;i<files.size() && !error;i++){
-                    p=new ProcessBuilder("identify",files.get(i).getAbsolutePath());  
-                    //For Crapintosh
-                    //p=new ProcessBuilder("/opt/local/bin/identify",files.get(i).getAbsolutePath());
+                for(int i=0;i<files.size() && !error;i++){                    
+                    p=new ProcessBuilder("/opt/local/bin/identify",files.get(i).getAbsolutePath());
                     proc=p.start();
                     proc.waitFor();
                     if(proc.exitValue()!=0){
