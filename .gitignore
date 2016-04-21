@@ -1,2 +1,9 @@
 /Grayscale-linux/build/
 /Grayscale-linux/dist/
+/Grayscale/dist/
+/Grayscale/build/
+/Grayscale-mac/dist/
+/Grayscale-mac/build/
+/Grayscale-win/nbproject/private/
+/Grayscale-win/build/
+/Grayscale-win/dist/

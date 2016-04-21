@@ -58,15 +58,16 @@ public class Progress extends Thread{
                 proc.waitFor();
                 if(proc.exitValue()!=0){
                     error=true;
+                    int i=prog;
                     Platform.runLater(() -> {
                         alert= new Alert(AlertType.WARNING);
                         alert.setHeaderText("Not an image file !");
-                        alert.setContentText("The file "+files.get(prog).getAbsolutePath()+" is not an image file !");
+                        alert.setContentText("The file "+files.get(i).getAbsolutePath()+" is not an image file !");
                         alert.showAndWait();
                     });
                 }
             }
-            if(!error)
+            if(!error && files.size()>0)
                 Platform.runLater(() -> pb.setVisible(true));
             for(prog=0;prog<files.size() && !error;prog++){                                                       
                         double d=(1/((double)files.size()/(prog+1)));                    

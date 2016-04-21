@@ -58,15 +58,16 @@ public class Progress extends Thread{
                 proc.waitFor();
                 if(proc.exitValue()!=0){
                     error=true;
+                    int i=prog;
                     Platform.runLater(() -> {
                         alert= new Alert(AlertType.WARNING);
                         alert.setHeaderText("Not an image file !");
-                        alert.setContentText("The file "+files.get(prog).getAbsolutePath()+" is not an image file !");
+                        alert.setContentText("The file "+files.get(i).getAbsolutePath()+" is not an image file !");
                         alert.showAndWait();
                     });
                 }
             }
-            if(!error)
+            if(!error && files.size()>0)
                 Platform.runLater(() -> pb.setVisible(true));
             for(prog=0;prog<files.size() && !error;prog++){                                                       
                         double d=(1/((double)files.size()/(prog+1)));                    
@@ -81,11 +82,10 @@ public class Progress extends Thread{
                         }                                        
                         p=new ProcessBuilder("/opt/local/bin/convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
                         proc=p.start();
-                        proc.waitFor();
-                        InputStream in = proc.getInputStream();
+                        proc.waitFor();                        
                         if(proc.exitValue()!=0){
                             error=true;
-							int i=prog;
+                            int i=prog;
                             Platform.runLater(() -> {
                                 alert= new Alert(AlertType.ERROR);
                                 alert.setHeaderText("Error during conversion !");
