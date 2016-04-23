@@ -16,6 +16,8 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -27,8 +29,12 @@ import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.StackPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -42,6 +48,7 @@ public class Grayscale extends Application {
     ProgressIndicator pb = new ProgressIndicator(0.6);
     Alert alert; 
     int prog;    
+    ObservableList<String> items =FXCollections.observableArrayList ();
  
 public class Progress extends Thread{       
     
@@ -133,14 +140,24 @@ public class Progress extends Thread{
         }
     }
 }
+
+    public void addfilelist(File[] f){               
+        for (File f1 : f) {
+            if (!f1.isDirectory()) {
+                items.add(f1.toString());
+                files.add(f1);
+            } else {
+                addfilelist(f1.listFiles());
+            }
+        }                               
+    }
     
     @Override
     public void start(Stage primaryStage) {             
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open Resource File");        
         ListView<String> list = new ListView<>();         
-        list.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);       
-        ObservableList<String> items =FXCollections.observableArrayList ();
+        list.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);               
         list.setItems(items);
         ImageView l = new ImageView();
         l.setImage(new Image(getClass().getClassLoader().getResource("resources/Grayscale.png").toString()));        
@@ -189,6 +206,28 @@ public class Progress extends Thread{
         list.setOnKeyReleased((KeyEvent k) -> {
             if(k.getCode()==KeyCode.DELETE || k.getCode()==KeyCode.BACK_SPACE)
                 rm.fire();
+        });
+        
+        list.setOnDragOver((DragEvent event) -> {
+            Dragboard db = event.getDragboard();
+            if (db.hasFiles()) {
+                event.acceptTransferModes(TransferMode.COPY);
+            } else {
+                event.consume();
+            }
+        });
+        
+        list.setOnDragDropped((DragEvent event) -> {
+            Dragboard db = event.getDragboard();
+            boolean success = false;
+            if (db.hasString()) {
+                List<File> f=db.getFiles(); 
+                //File[] a = null;
+                addfilelist(f.toArray(new File[0]));
+                success = true;
+            }
+            event.setDropCompleted(success);
+            event.consume();
         });
         
         StackPane root = new StackPane();       
