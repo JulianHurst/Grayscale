@@ -205,21 +205,16 @@ public class Progress extends Thread{
                 rm.fire();
         });
         
-        list.setOnDragOver((DragEvent event) -> {
-            Dragboard db = event.getDragboard();
-            if (db.hasFiles()) {
-                event.acceptTransferModes(TransferMode.COPY);
-            } else {
-                event.consume();
-            }
+        list.setOnDragOver((DragEvent event) -> {           
+            event.acceptTransferModes(TransferMode.ANY);            
+            event.consume();            
         });
         
         list.setOnDragDropped((DragEvent event) -> {
             Dragboard db = event.getDragboard();
-            boolean success = false;
-            if (db.hasString()) {
-                List<File> f=db.getFiles(); 
-                //File[] a = null;
+            boolean success = false;            
+            if (db.hasFiles()) {                
+                List<File> f=db.getFiles();                 
                 addfilelist(f.toArray(new File[0]));
                 success = true;
             }
