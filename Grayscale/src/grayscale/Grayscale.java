@@ -242,9 +242,9 @@ public class Progress extends Thread{
         root.getChildren().add(l);
         root.getChildren().add(pb);
                 
-        Scene scene = new Scene(root, 300, 250);
-        primaryStage.setMinWidth(1000);
-        primaryStage.setMinHeight(800);
+        Scene scene = new Scene(root, 850, 600);
+        primaryStage.setMinWidth(850);
+        primaryStage.setMinHeight(600);
         primaryStage.getIcons().add(new Image(getClass().getClassLoader().getResource("resources/G.png").toString()));
         primaryStage.setTitle("Grayscale");
         primaryStage.setScene(scene);
