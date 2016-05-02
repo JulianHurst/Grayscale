@@ -70,7 +70,7 @@ public class Progress extends Thread{
                     Platform.runLater(() -> {
                         alert= new Alert(AlertType.WARNING);
                         alert.setHeaderText("Not an image file !");
-                        alert.setContentText("The file "+files.get(i).getAbsolutePath()+" is not an image file !");
+                        alert.setContentText("The file "+files.get(i).getAbsolutePath()+" is not an image file or is corrupted !");
                         alert.showAndWait();
                     });
                 }
