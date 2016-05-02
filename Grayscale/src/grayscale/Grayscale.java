@@ -71,6 +71,7 @@ public class Progress extends Thread{
                         alert= new Alert(AlertType.WARNING);
                         alert.setHeaderText("Not an image file !");
                         alert.setContentText("The file "+files.get(i).getAbsolutePath()+" is not an image file or is corrupted !");
+                        alert.setResizable(true);
                         alert.showAndWait();
                     });
                 }
@@ -101,6 +102,7 @@ public class Progress extends Thread{
                             int i=prog;
                             Platform.runLater(() -> {
                                 alert= new Alert(AlertType.ERROR);
+                                alert.setResizable(true);
                                 alert.setHeaderText("Error during conversion !");
                                 alert.setContentText("The file "+files.get(i).getAbsolutePath()+" could not be converted ! Check if the file is not an image file and/or is not corrupted. If this error still appears ImageMagick may not be able to convert this image.");
                                 alert.showAndWait();
@@ -112,6 +114,7 @@ public class Progress extends Thread{
                     error=true;
                     Platform.runLater(() -> {
                         alert= new Alert(AlertType.ERROR);
+                        alert.setResizable(true);
                         alert.setHeaderText("Exception thrown !");
                         alert.setContentText(ex.toString());
                         alert.showAndWait();
@@ -128,6 +131,7 @@ public class Progress extends Thread{
             else{
                 Platform.runLater(() -> {
                     alert=new Alert(AlertType.WARNING);
+                    alert.setResizable(true);
                     alert.setHeaderText("No files !");
                     alert.setContentText("You have not given any files to convert !");
                 });
