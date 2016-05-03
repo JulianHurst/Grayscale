@@ -22,6 +22,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.SelectionMode;
@@ -45,6 +46,7 @@ public class Grayscale extends Application {
     ProgressIndicator pb = new ProgressIndicator(0.6);
     Alert alert; 
     int prog;    
+    CheckBox check=new CheckBox("Replace original files");
     ObservableList<String> items =FXCollections.observableArrayList ();
  
 public class Progress extends Thread{       
@@ -80,21 +82,32 @@ public class Progress extends Thread{
                 Platform.runLater(() -> pb.setVisible(true));
             for(prog=0;prog<files.size() && !error;prog++){                                                       
                         double d=(1/((double)files.size()/(prog+1)));                    
-                        Platform.runLater(() -> pb.setProgress(d));                    
-                        if(files.get(prog).getAbsolutePath().contains(".")){
-                            noext=files.get(prog).getAbsolutePath().substring(0, files.get(prog).getAbsolutePath().lastIndexOf('.'));
-                            ext=files.get(prog).getAbsolutePath().substring(files.get(prog).getAbsolutePath().lastIndexOf('.'), files.get(prog).getAbsolutePath().length());
+                        Platform.runLater(() -> pb.setProgress(d));
+                        System.out.println(!check.isSelected());
+                        if(!check.isSelected()){
+                            if(files.get(prog).getAbsolutePath().contains(".")){
+                                noext=files.get(prog).getAbsolutePath().substring(0, files.get(prog).getAbsolutePath().lastIndexOf('.'));
+                                ext=files.get(prog).getAbsolutePath().substring(files.get(prog).getAbsolutePath().lastIndexOf('.'), files.get(prog).getAbsolutePath().length());
+                            }
+                            else{
+                                noext=files.get(prog).getAbsolutePath();
+                                ext="";
+                            }
+                            if("Linux".equals(System.getProperty("os.name")))
+                                p=new ProcessBuilder("convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
+                            else if(System.getProperty("os.name").contains("Windows"))
+                                p=new ProcessBuilder("convert-im",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
+                            else
+                                p=new ProcessBuilder("/opt/local/bin/convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
                         }
                         else{
-                            noext=files.get(prog).getAbsolutePath();
-                            ext="";
-                        } 
-                        if("Linux".equals(System.getProperty("os.name")))
-                            p=new ProcessBuilder("convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
-                        else if(System.getProperty("os.name").contains("Windows"))
-                            p=new ProcessBuilder("convert-im",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
-                        else
-                            p=new ProcessBuilder("/opt/local/bin/convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
+                            if("Linux".equals(System.getProperty("os.name")))
+                                p=new ProcessBuilder("convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",files.get(prog).getAbsolutePath());
+                            else if(System.getProperty("os.name").contains("Windows"))
+                                p=new ProcessBuilder("convert-im",files.get(prog).getAbsolutePath(),"-colorspace","gray",files.get(prog).getAbsolutePath());
+                            else
+                                p=new ProcessBuilder("/opt/local/bin/convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",files.get(prog).getAbsolutePath());
+                        }
                         proc=p.start();
                         proc.waitFor();                        
                         if(proc.exitValue()!=0){
@@ -156,7 +169,8 @@ public class Progress extends Thread{
     @Override
     public void start(Stage primaryStage) {             
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Open Resource File");        
+        fileChooser.setTitle("Open Resource File");            
+        check.setSelected(true);
         ListView<String> list = new ListView<>();         
         list.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);               
         list.setItems(items);
@@ -191,15 +205,17 @@ public class Progress extends Thread{
         rm.setText("Remove");
         rm.setOnAction((ActionEvent event) -> {
             Object[] item = list.getSelectionModel().getSelectedItems().toArray(); 
+            boolean end;
             if(item.length!=0)                
                 pb.setVisible(false);
             for (Object item1 : item) {
+                end=false;
                 items.remove(item1.toString());                
-                for(int i=0;i<files.size();i++)
+                for(int i=0;i<files.size() && !end;i++)
                     if(files.get(i).toString() == null ? item1.toString() == null : files.get(i).toString().equals(item1.toString())){
-                        files.remove(i);
-                        i--;
-                    }
+                        files.remove(i);                       
+                        end=true;
+                    }                
             }
             list.getSelectionModel().clearSelection();                        
         });
@@ -234,17 +250,20 @@ public class Progress extends Thread{
         StackPane.setAlignment(rm,Pos.BOTTOM_RIGHT);
         StackPane.setAlignment(l,Pos.TOP_CENTER);
         StackPane.setAlignment(pb,Pos.BOTTOM_CENTER);
+        StackPane.setAlignment(check, Pos.BOTTOM_CENTER);
         StackPane.setMargin(btn, new Insets(0,0,40,0));        
         StackPane.setMargin(rm, new Insets(0,60,40,0));
         StackPane.setMargin(add, new Insets(0,140,40,0));
         StackPane.setMargin(l, new Insets(25,0,0,0));
-        StackPane.setMargin(pb, new Insets(0,0,20,200));
+        StackPane.setMargin(pb, new Insets(0,0,20,200));        
+        StackPane.setMargin(check, new Insets(0,0,45,450));
         root.getChildren().add(btn);
         root.getChildren().add(add);        
         root.getChildren().add(rm);
         root.getChildren().add(list);
         root.getChildren().add(l);
         root.getChildren().add(pb);
+        root.getChildren().add(check);
                 
         Scene scene = new Scene(root, 850, 600);
         primaryStage.setMinWidth(850);
