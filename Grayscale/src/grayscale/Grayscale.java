@@ -20,6 +20,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -49,6 +51,7 @@ import org.im4java.core.ConvertCmd;
 import org.im4java.core.IM4JavaException;
 import org.im4java.core.IMOperation;
 import org.im4java.core.IdentifyCmd;
+import org.im4java.process.ProcessStarter;
 
 /**
  *
@@ -66,9 +69,18 @@ public class Progress extends Thread{
     
     @Override
     public void run(){
+        String imPath;
+        if(System.getProperty("os.name").contains("Windows")){
+            imPath="C:\\Program Files\\ImageMagick";
+            ProcessStarter.setGlobalSearchPath(imPath);            
+        }
+        else if(System.getProperty("os.name").contains("Mac")){
+            imPath="/opt/local/bin";
+            ProcessStarter.setGlobalSearchPath(imPath);
+        }            
         boolean error=false;
         IMOperation op;
-        IdentifyCmd id = new IdentifyCmd();        
+        IdentifyCmd id = new IdentifyCmd();          
         if(files.isEmpty()){
             Platform.runLater(() -> {
                 alert=new Alert(AlertType.WARNING);
@@ -88,6 +100,7 @@ public class Progress extends Thread{
             } catch (IOException | InterruptedException | IM4JavaException ex) {
                 error=true;
                 int i=prog;
+                System.out.println(id.getErrorText());
                 Platform.runLater(() -> {
                     alert= new Alert(AlertType.WARNING);
                     alert.setHeaderText("Not an image file !");
@@ -99,41 +112,78 @@ public class Progress extends Thread{
         }
         if(!error && files.size()>0)
             Platform.runLater(() -> pb.setVisible(true));
-        ConvertCmd cmd = new ConvertCmd();
+        ConvertCmd cmd = new ConvertCmd();        
         cmd.setAsyncMode(false);
-        
+        ProcessBuilder p;   
+        Process proc; 
         for(prog=0;prog<files.size() && !error;prog++){
             double d=(1/((double)files.size()/(prog+1)));
             Platform.runLater(() -> pb.setProgress(d));
-            op = new IMOperation();                  
-            op.addImage(files.get(prog).getAbsolutePath());
-            op.colorspace("gray");
-            if(check.isSelected())
+            if(!System.getProperty("os.name").contains("Windows")){
+                op = new IMOperation();                  
                 op.addImage(files.get(prog).getAbsolutePath());
-            else{
-                String noext,ext;
-                if(files.get(prog).getAbsolutePath().contains(".")){
-                    noext=files.get(prog).getAbsolutePath().substring(0, files.get(prog).getAbsolutePath().lastIndexOf('.'));
-                    ext=files.get(prog).getAbsolutePath().substring(files.get(prog).getAbsolutePath().lastIndexOf('.'), files.get(prog).getAbsolutePath().length());
-                }
+                op.colorspace("gray");
+                if(check.isSelected())
+                    op.addImage(files.get(prog).getAbsolutePath());
                 else{
-                    noext=files.get(prog).getAbsolutePath();
-                    ext="";
+                    String noext,ext;
+                    if(files.get(prog).getAbsolutePath().contains(".")){
+                        noext=files.get(prog).getAbsolutePath().substring(0, files.get(prog).getAbsolutePath().lastIndexOf('.'));
+                        ext=files.get(prog).getAbsolutePath().substring(files.get(prog).getAbsolutePath().lastIndexOf('.'), files.get(prog).getAbsolutePath().length());
+                    }
+                    else{
+                        noext=files.get(prog).getAbsolutePath();
+                        ext="";
+                    }
+                    op.addImage(noext+"-gray"+ext);
                 }
-                op.addImage(noext+"-gray"+ext);
+                try {
+                    cmd.run(op);
+                } catch (IOException | InterruptedException | IM4JavaException ex) {
+                    error=true;
+                    int i=prog;
+                    System.out.println(cmd.getErrorText());
+                    Platform.runLater(() -> {
+                        alert= new Alert(AlertType.ERROR);
+                        alert.setResizable(true);
+                        alert.setHeaderText("Error during conversion !");
+                        alert.setContentText("The file "+files.get(i).getAbsolutePath()+" could not be converted ! Check if the file is not an image file and/or is not corrupted. If this error still appears ImageMagick may not be able to convert this image.");
+                        alert.showAndWait();
+                    });       
+                }
             }
-            try {
-                cmd.run(op);
-            } catch (IOException | InterruptedException | IM4JavaException ex) {
-                error=true;
-                int i=prog;
-                Platform.runLater(() -> {
-                    alert= new Alert(AlertType.ERROR);
-                    alert.setResizable(true);
-                    alert.setHeaderText("Error during conversion !");
-                    alert.setContentText("The file "+files.get(i).getAbsolutePath()+" could not be converted ! Check if the file is not an image file and/or is not corrupted. If this error still appears ImageMagick may not be able to convert this image.");
-                    alert.showAndWait();
-                });       
+            else{
+                if(check.isSelected())
+                    p=new ProcessBuilder("C:\\Program Files\\ImageMagick\\magick.exe",files.get(prog).getAbsolutePath(),"-colorspace","gray",files.get(prog).getAbsolutePath());
+                else{
+                    String noext,ext;
+                    if(files.get(prog).getAbsolutePath().contains(".")){
+                        noext=files.get(prog).getAbsolutePath().substring(0, files.get(prog).getAbsolutePath().lastIndexOf('.'));
+                        ext=files.get(prog).getAbsolutePath().substring(files.get(prog).getAbsolutePath().lastIndexOf('.'), files.get(prog).getAbsolutePath().length());
+                    }
+                    else{
+                        noext=files.get(prog).getAbsolutePath();
+                        ext="";
+                    }
+                    p=new ProcessBuilder("C:\\Program Files\\ImageMagick\\magick.exe",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
+                }
+                try {
+                    proc=p.start();
+                    proc.waitFor();
+                    if(proc.exitValue()!=0){
+                        error=true;
+                        int i=prog;
+                        Platform.runLater(() -> {
+                            alert= new Alert(AlertType.ERROR);
+                            alert.setHeaderText("Error during conversion !");
+                            alert.setContentText("The file "+files.get(i).getAbsolutePath()+" could not be converted ! Check if the file is not an image file and/or is not corrupted. If this error still appears ImageMagick may not be able to convert this image.");
+                            alert.setResizable(true);
+                            alert.showAndWait();
+                        });
+                    }
+                } catch (IOException | InterruptedException ex) {                
+                    Logger.getLogger(Grayscale.class.getName()).log(Level.SEVERE, null, ex);
+                }                                
             }
         }
         if(!error){
@@ -145,8 +195,10 @@ public class Progress extends Thread{
             else if(files.size()>1)
                 Platform.runLater(() -> alert.setContentText("The files have been successfully converted !"));            
             Platform.runLater(() -> alert.showAndWait());
-        }
-    }
+            Platform.runLater(() -> items.clear());
+            files.clear();
+        }                
+    }    
 }
 
     public void addfilelist(File[] f){               
@@ -246,13 +298,13 @@ public class Progress extends Thread{
         StackPane.setAlignment(rm,Pos.BOTTOM_RIGHT);
         StackPane.setAlignment(l,Pos.TOP_CENTER);
         StackPane.setAlignment(pb,Pos.BOTTOM_CENTER);
-        StackPane.setAlignment(check, Pos.BOTTOM_CENTER);
+        StackPane.setAlignment(check, Pos.BOTTOM_LEFT);
         StackPane.setMargin(btn, new Insets(0,0,40,0));        
         StackPane.setMargin(rm, new Insets(0,60,40,0));
         StackPane.setMargin(add, new Insets(0,140,40,0));
         StackPane.setMargin(l, new Insets(25,0,0,0));
         StackPane.setMargin(pb, new Insets(0,0,20,200));        
-        StackPane.setMargin(check, new Insets(0,0,45,450));
+        StackPane.setMargin(check, new Insets(0,0,40,25));
         root.getChildren().add(btn);
         root.getChildren().add(add);        
         root.getChildren().add(rm);
