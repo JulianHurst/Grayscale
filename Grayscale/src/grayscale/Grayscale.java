@@ -1,16 +1,25 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+Copyright 2016 Julian Hurst
+
+   Licensed under the ImageMagick License (the "License"); you may not use
+   this file except in compliance with the License.  You may obtain a copy
+   of the License at
+
+     http://www.imagemagick.org/script/license.php
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+   WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+   License for the specific language governing permissions and limitations
+   under the License.
+*/
+
 package grayscale;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -36,6 +45,10 @@ import javafx.scene.input.TransferMode;
 import javafx.scene.layout.StackPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import org.im4java.core.ConvertCmd;
+import org.im4java.core.IM4JavaException;
+import org.im4java.core.IMOperation;
+import org.im4java.core.IdentifyCmd;
 
 /**
  *
@@ -53,85 +66,75 @@ public class Progress extends Thread{
     
     @Override
     public void run(){
-                ProcessBuilder p;   
-        Process proc;        
-        String noext,ext;   
         boolean error=false;
-        try {           
-            for(prog=0;prog<files.size() && !error;prog++){   
-                if("Linux".equals(System.getProperty("os.name")) || System.getProperty("os.name").contains("Windows"))
-                    p=new ProcessBuilder("identify",files.get(prog).getAbsolutePath());
-                else
-                    p=new ProcessBuilder("/opt/local/bin/identify",files.get(prog).getAbsolutePath());
-                System.out.println(System.getProperty("os.name"));
-                proc=p.start();
-                proc.waitFor();
-                if(proc.exitValue()!=0){
-                    error=true;
-                    int i=prog;
-                    Platform.runLater(() -> {
-                        alert= new Alert(AlertType.WARNING);
-                        alert.setHeaderText("Not an image file !");
-                        alert.setContentText("The file "+files.get(i).getAbsolutePath()+" is not an image file or is corrupted !");
-                        alert.setResizable(true);
-                        alert.showAndWait();
-                    });
+        IMOperation op;
+        IdentifyCmd id = new IdentifyCmd();        
+        if(files.isEmpty()){
+            Platform.runLater(() -> {
+                alert=new Alert(AlertType.WARNING);
+                alert.setResizable(true);
+                alert.setHeaderText("No files !");
+                alert.setContentText("You have not given any files to convert !");
+                alert.showAndWait();
+            });
+            return;
+        }
+        for(prog=0;prog<files.size() && !error;prog++){ 
+            op = new IMOperation(); 
+            id.setAsyncMode(false);
+            op.addImage(files.get(prog).getAbsolutePath());                                
+            try {
+                id.run(op);
+            } catch (IOException | InterruptedException | IM4JavaException ex) {
+                error=true;
+                int i=prog;
+                Platform.runLater(() -> {
+                    alert= new Alert(AlertType.WARNING);
+                    alert.setHeaderText("Not an image file !");
+                    alert.setContentText("The file "+files.get(i).getAbsolutePath()+" is not an image file or is corrupted !");
+                    alert.setResizable(true);
+                    alert.showAndWait();
+                });
+            }             
+        }
+        if(!error && files.size()>0)
+            Platform.runLater(() -> pb.setVisible(true));
+        ConvertCmd cmd = new ConvertCmd();
+        cmd.setAsyncMode(false);
+        
+        for(prog=0;prog<files.size() && !error;prog++){
+            double d=(1/((double)files.size()/(prog+1)));
+            Platform.runLater(() -> pb.setProgress(d));
+            op = new IMOperation();                  
+            op.addImage(files.get(prog).getAbsolutePath());
+            op.colorspace("gray");
+            if(check.isSelected())
+                op.addImage(files.get(prog).getAbsolutePath());
+            else{
+                String noext,ext;
+                if(files.get(prog).getAbsolutePath().contains(".")){
+                    noext=files.get(prog).getAbsolutePath().substring(0, files.get(prog).getAbsolutePath().lastIndexOf('.'));
+                    ext=files.get(prog).getAbsolutePath().substring(files.get(prog).getAbsolutePath().lastIndexOf('.'), files.get(prog).getAbsolutePath().length());
                 }
+                else{
+                    noext=files.get(prog).getAbsolutePath();
+                    ext="";
+                }
+                op.addImage(noext+"-gray"+ext);
             }
-            if(!error && files.size()>0)
-                Platform.runLater(() -> pb.setVisible(true));
-            for(prog=0;prog<files.size() && !error;prog++){                                                       
-                        double d=(1/((double)files.size()/(prog+1)));                    
-                        Platform.runLater(() -> pb.setProgress(d));
-                        System.out.println(!check.isSelected());
-                        if(!check.isSelected()){
-                            if(files.get(prog).getAbsolutePath().contains(".")){
-                                noext=files.get(prog).getAbsolutePath().substring(0, files.get(prog).getAbsolutePath().lastIndexOf('.'));
-                                ext=files.get(prog).getAbsolutePath().substring(files.get(prog).getAbsolutePath().lastIndexOf('.'), files.get(prog).getAbsolutePath().length());
-                            }
-                            else{
-                                noext=files.get(prog).getAbsolutePath();
-                                ext="";
-                            }
-                            if("Linux".equals(System.getProperty("os.name")))
-                                p=new ProcessBuilder("convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
-                            else if(System.getProperty("os.name").contains("Windows"))
-                                p=new ProcessBuilder("convert-im",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
-                            else
-                                p=new ProcessBuilder("/opt/local/bin/convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
-                        }
-                        else{
-                            if("Linux".equals(System.getProperty("os.name")))
-                                p=new ProcessBuilder("convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",files.get(prog).getAbsolutePath());
-                            else if(System.getProperty("os.name").contains("Windows"))
-                                p=new ProcessBuilder("convert-im",files.get(prog).getAbsolutePath(),"-colorspace","gray",files.get(prog).getAbsolutePath());
-                            else
-                                p=new ProcessBuilder("/opt/local/bin/convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",files.get(prog).getAbsolutePath());
-                        }
-                        proc=p.start();
-                        proc.waitFor();                        
-                        if(proc.exitValue()!=0){
-                            error=true;
-                            int i=prog;
-                            Platform.runLater(() -> {
-                                alert= new Alert(AlertType.ERROR);
-                                alert.setResizable(true);
-                                alert.setHeaderText("Error during conversion !");
-                                alert.setContentText("The file "+files.get(i).getAbsolutePath()+" could not be converted ! Check if the file is not an image file and/or is not corrupted. If this error still appears ImageMagick may not be able to convert this image.");
-                                alert.showAndWait();
-                            });                                                
-                        }                                                  
-            }                            
-        } catch (IOException | InterruptedException ex) {
-                    Logger.getLogger(Grayscale.class.getName()).log(Level.SEVERE, null, ex);    
-                    error=true;
-                    Platform.runLater(() -> {
-                        alert= new Alert(AlertType.ERROR);
-                        alert.setResizable(true);
-                        alert.setHeaderText("Exception thrown !");
-                        alert.setContentText(ex.toString());
-                        alert.showAndWait();
-                    });
+            try {
+                cmd.run(op);
+            } catch (IOException | InterruptedException | IM4JavaException ex) {
+                error=true;
+                int i=prog;
+                Platform.runLater(() -> {
+                    alert= new Alert(AlertType.ERROR);
+                    alert.setResizable(true);
+                    alert.setHeaderText("Error during conversion !");
+                    alert.setContentText("The file "+files.get(i).getAbsolutePath()+" could not be converted ! Check if the file is not an image file and/or is not corrupted. If this error still appears ImageMagick may not be able to convert this image.");
+                    alert.showAndWait();
+                });       
+            }
         }
         if(!error){
             Platform.runLater(() -> {
@@ -140,16 +143,7 @@ public class Progress extends Thread{
             if(files.size()==1)
                 Platform.runLater(() -> alert.setContentText("The file has been successfully converted !"));
             else if(files.size()>1)
-                Platform.runLater(() -> alert.setContentText("The files have been successfully converted !"));
-            else{
-                Platform.runLater(() -> {
-                    alert=new Alert(AlertType.WARNING);
-                    alert.setResizable(true);
-                    alert.setHeaderText("No files !");
-                    alert.setContentText("You have not given any files to convert !");
-                });
-                
-            }
+                Platform.runLater(() -> alert.setContentText("The files have been successfully converted !"));            
             Platform.runLater(() -> alert.showAndWait());
         }
     }
@@ -165,6 +159,7 @@ public class Progress extends Thread{
             }
         }                               
     }
+        
     
     @Override
     public void start(Stage primaryStage) {             
@@ -205,6 +200,7 @@ public class Progress extends Thread{
         rm.setText("Remove");
         rm.setOnAction((ActionEvent event) -> {
             Object[] item = list.getSelectionModel().getSelectedItems().toArray(); 
+            //convertim();
             boolean end;
             if(item.length!=0)                
                 pb.setVisible(false);
