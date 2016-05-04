@@ -1,8 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package grayscale;
 
 import java.io.File;
@@ -57,13 +53,22 @@ public class Progress extends Thread{
         Process proc;        
         String noext,ext;   
         boolean error=false;
+        if(files.isEmpty()){
+            Platform.runLater(() -> {
+                alert=new Alert(AlertType.WARNING);
+                alert.setResizable(true);
+                alert.setHeaderText("No files !");
+                alert.setContentText("You have not given any files to convert !");
+                alert.showAndWait();
+            });
+            return;
+        }
         try {           
             for(prog=0;prog<files.size() && !error;prog++){   
                 if("Linux".equals(System.getProperty("os.name")) || System.getProperty("os.name").contains("Windows"))
                     p=new ProcessBuilder("identify",files.get(prog).getAbsolutePath());
                 else
-                    p=new ProcessBuilder("/opt/local/bin/identify",files.get(prog).getAbsolutePath());
-                System.out.println(System.getProperty("os.name"));
+                    p=new ProcessBuilder("/opt/local/bin/identify",files.get(prog).getAbsolutePath());                
                 proc=p.start();
                 proc.waitFor();
                 if(proc.exitValue()!=0){
@@ -83,8 +88,9 @@ public class Progress extends Thread{
             for(prog=0;prog<files.size() && !error;prog++){                                                       
                         double d=(1/((double)files.size()/(prog+1)));                    
                         Platform.runLater(() -> pb.setProgress(d));
-                        System.out.println(!check.isSelected());
+                        //System.out.println(!check.isSelected());
                         if(!check.isSelected()){
+                            /*
                             if(files.get(prog).getAbsolutePath().contains(".")){
                                 noext=files.get(prog).getAbsolutePath().substring(0, files.get(prog).getAbsolutePath().lastIndexOf('.'));
                                 ext=files.get(prog).getAbsolutePath().substring(files.get(prog).getAbsolutePath().lastIndexOf('.'), files.get(prog).getAbsolutePath().length());
@@ -93,18 +99,21 @@ public class Progress extends Thread{
                                 noext=files.get(prog).getAbsolutePath();
                                 ext="";
                             }
+                            */
+                            String natdir=files.get(prog).getAbsoluteFile().toString();
+                            String path=natdir.substring(0,natdir.lastIndexOf(File.separator));
                             if("Linux".equals(System.getProperty("os.name")))
-                                p=new ProcessBuilder("convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
+                                p=new ProcessBuilder("convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",path+"/Gray-"+files.get(prog).toPath().getFileName());
                             else if(System.getProperty("os.name").contains("Windows"))
-                                p=new ProcessBuilder("convert-im",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
+                                p=new ProcessBuilder("magick",files.get(prog).getAbsolutePath(),"-colorspace","gray",path+"\\Gray-"+files.get(prog).toPath().getFileName());
                             else
-                                p=new ProcessBuilder("/opt/local/bin/convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
+                                p=new ProcessBuilder("/opt/local/bin/convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",path+"/Gray-"+files.get(prog).toPath().getFileName());
                         }
-                        else{
+                        else{                            
                             if("Linux".equals(System.getProperty("os.name")))
                                 p=new ProcessBuilder("convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",files.get(prog).getAbsolutePath());
                             else if(System.getProperty("os.name").contains("Windows"))
-                                p=new ProcessBuilder("convert-im",files.get(prog).getAbsolutePath(),"-colorspace","gray",files.get(prog).getAbsolutePath());
+                                p=new ProcessBuilder("magick",files.get(prog).getAbsolutePath(),"-colorspace","gray",files.get(prog).getAbsolutePath());
                             else
                                 p=new ProcessBuilder("/opt/local/bin/convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",files.get(prog).getAbsolutePath());
                         }
@@ -113,11 +122,15 @@ public class Progress extends Thread{
                         if(proc.exitValue()!=0){
                             error=true;
                             int i=prog;
+                            int b;
+                            while((b=proc.getErrorStream().read())!=-1)
+                                System.out.print((char)b);
+                            String file=files.get(i).getAbsolutePath();
                             Platform.runLater(() -> {
                                 alert= new Alert(AlertType.ERROR);
                                 alert.setResizable(true);
                                 alert.setHeaderText("Error during conversion !");
-                                alert.setContentText("The file "+files.get(i).getAbsolutePath()+" could not be converted ! Check if the file is not an image file and/or is not corrupted. If this error still appears ImageMagick may not be able to convert this image.");
+                                alert.setContentText("The file "+file+" could not be converted ! Check if the file is not an image file and/or is not corrupted. If this error still appears ImageMagick may not be able to convert this image.");
                                 alert.showAndWait();
                             });                                                
                         }                                                  
@@ -140,18 +153,11 @@ public class Progress extends Thread{
             if(files.size()==1)
                 Platform.runLater(() -> alert.setContentText("The file has been successfully converted !"));
             else if(files.size()>1)
-                Platform.runLater(() -> alert.setContentText("The files have been successfully converted !"));
-            else{
-                Platform.runLater(() -> {
-                    alert=new Alert(AlertType.WARNING);
-                    alert.setResizable(true);
-                    alert.setHeaderText("No files !");
-                    alert.setContentText("You have not given any files to convert !");
-                });
-                
-            }
-            Platform.runLater(() -> alert.showAndWait());
-        }
+                Platform.runLater(() -> alert.setContentText("The files have been successfully converted !"));                            
+            Platform.runLater(() -> alert.showAndWait()); 
+            Platform.runLater(() -> items.clear());
+            files.clear();
+        }        
     }
 }
 
@@ -250,13 +256,13 @@ public class Progress extends Thread{
         StackPane.setAlignment(rm,Pos.BOTTOM_RIGHT);
         StackPane.setAlignment(l,Pos.TOP_CENTER);
         StackPane.setAlignment(pb,Pos.BOTTOM_CENTER);
-        StackPane.setAlignment(check, Pos.BOTTOM_CENTER);
+        StackPane.setAlignment(check, Pos.BOTTOM_LEFT);
         StackPane.setMargin(btn, new Insets(0,0,40,0));        
         StackPane.setMargin(rm, new Insets(0,60,40,0));
         StackPane.setMargin(add, new Insets(0,140,40,0));
         StackPane.setMargin(l, new Insets(25,0,0,0));
         StackPane.setMargin(pb, new Insets(0,0,20,200));        
-        StackPane.setMargin(check, new Insets(0,0,45,450));
+        StackPane.setMargin(check, new Insets(0,0,40,25));
         root.getChildren().add(btn);
         root.getChildren().add(add);        
         root.getChildren().add(rm);
