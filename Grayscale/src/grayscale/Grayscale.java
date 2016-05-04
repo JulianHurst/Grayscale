@@ -69,12 +69,8 @@ public class Progress extends Thread{
     
     @Override
     public void run(){
-        String imPath;
-        if(System.getProperty("os.name").contains("Windows")){
-            imPath="C:\\Program Files\\ImageMagick";
-            ProcessStarter.setGlobalSearchPath(imPath);            
-        }
-        else if(System.getProperty("os.name").contains("Mac")){
+        String imPath;        
+        if(System.getProperty("os.name").contains("Mac")){
             imPath="/opt/local/bin";
             ProcessStarter.setGlobalSearchPath(imPath);
         }            
@@ -154,7 +150,7 @@ public class Progress extends Thread{
             }
             else{
                 if(check.isSelected())
-                    p=new ProcessBuilder("C:\\Program Files\\ImageMagick\\magick.exe",files.get(prog).getAbsolutePath(),"-colorspace","gray",files.get(prog).getAbsolutePath());
+                    p=new ProcessBuilder("magick",files.get(prog).getAbsolutePath(),"-colorspace","gray",files.get(prog).getAbsolutePath());
                 else{
                     String noext,ext;
                     if(files.get(prog).getAbsolutePath().contains(".")){
@@ -165,7 +161,7 @@ public class Progress extends Thread{
                         noext=files.get(prog).getAbsolutePath();
                         ext="";
                     }
-                    p=new ProcessBuilder("C:\\Program Files\\ImageMagick\\magick.exe",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
+                    p=new ProcessBuilder("magick",files.get(prog).getAbsolutePath(),"-colorspace","gray",noext+"-gray"+ext);
                 }
                 try {
                     proc=p.start();
