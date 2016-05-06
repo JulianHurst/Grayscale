@@ -19,6 +19,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.SelectionMode;
@@ -43,6 +44,7 @@ public class Grayscale extends Application {
     Alert alert; 
     int prog;    
     CheckBox check=new CheckBox("Replace original files");
+    Label info = new Label();
     ObservableList<String> items =FXCollections.observableArrayList ();
  
 public class Progress extends Thread{       
@@ -63,8 +65,12 @@ public class Progress extends Thread{
             });
             return;
         }
+        Platform.runLater(() -> pb.setVisible(true));
+        Platform.runLater(() -> info.setText("Identifying..."));
         try {           
-            for(prog=0;prog<files.size() && !error;prog++){   
+            for(prog=0;prog<files.size() && !error;prog++){
+                double d=(((prog+1)/2)/(double)files.size());                
+                Platform.runLater(() -> pb.setProgress(d));
                 if("Linux".equals(System.getProperty("os.name")) || System.getProperty("os.name").contains("Windows"))
                     p=new ProcessBuilder("identify",files.get(prog).getAbsolutePath());
                 else
@@ -80,13 +86,16 @@ public class Progress extends Thread{
                         alert.setContentText("The file "+files.get(i).getAbsolutePath()+" is not an image file or is corrupted !");
                         alert.setResizable(true);
                         alert.showAndWait();
+                        Platform.runLater(() -> pb.setVisible(false));
                     });
                 }
-            }
-            if(!error && files.size()>0)
+            }            
+            if(!error){
                 Platform.runLater(() -> pb.setVisible(true));
+                Platform.runLater(() -> info.setText("Converting..."));
+            }
             for(prog=0;prog<files.size() && !error;prog++){                                                       
-                        double d=(1/((double)files.size()/(prog+1)));                    
+                        double d=(((prog+1)/2)/(double)files.size())+((double)files.size()/2)/files.size();                          
                         Platform.runLater(() -> pb.setProgress(d));
                         //System.out.println(!check.isSelected());
                         if(!check.isSelected()){
@@ -157,7 +166,8 @@ public class Progress extends Thread{
             Platform.runLater(() -> alert.showAndWait()); 
             Platform.runLater(() -> items.clear());
             files.clear();
-        }        
+        } 
+        Platform.runLater(() -> info.setText(""));
     }
 }
 
@@ -190,6 +200,8 @@ public class Progress extends Thread{
         pb.setMinSize(50, 50);        
         pb.setMaxSize(50, 50);
         pb.setVisible(false);
+        //info.setText("Identifying...");
+        info.setText("");
         btn.setText("Apply Grayscale");
         btn.setOnAction((ActionEvent event) -> {
             boolean error=false;            
@@ -257,12 +269,14 @@ public class Progress extends Thread{
         StackPane.setAlignment(l,Pos.TOP_CENTER);
         StackPane.setAlignment(pb,Pos.BOTTOM_CENTER);
         StackPane.setAlignment(check, Pos.BOTTOM_LEFT);
+        StackPane.setAlignment(info, Pos.BOTTOM_CENTER);
         StackPane.setMargin(btn, new Insets(0,0,40,0));        
         StackPane.setMargin(rm, new Insets(0,60,40,0));
         StackPane.setMargin(add, new Insets(0,140,40,0));
         StackPane.setMargin(l, new Insets(25,0,0,0));
-        StackPane.setMargin(pb, new Insets(0,0,20,200));        
+        StackPane.setMargin(pb, new Insets(0,0,20,250));        
         StackPane.setMargin(check, new Insets(0,0,40,25));
+        StackPane.setMargin(info, new Insets(0,0,75,260));
         root.getChildren().add(btn);
         root.getChildren().add(add);        
         root.getChildren().add(rm);
@@ -270,6 +284,7 @@ public class Progress extends Thread{
         root.getChildren().add(l);
         root.getChildren().add(pb);
         root.getChildren().add(check);
+        root.getChildren().add(info);
                 
         Scene scene = new Scene(root, 850, 600);
         primaryStage.setMinWidth(850);
