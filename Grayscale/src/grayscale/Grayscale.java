@@ -124,7 +124,7 @@ public class Progress extends Thread{
                             if("Linux".equals(System.getProperty("os.name")))
                                 p=new ProcessBuilder("convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",files.get(prog).getAbsolutePath());
                             else if(System.getProperty("os.name").contains("Windows"))
-                                p=new ProcessBuilder("magick",files.get(prog).getAbsolutePath(),"-colorspace","gray",files.get(prog).getAbsolutePath());
+                                p=new ProcessBuilder("magick","convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",files.get(prog).getAbsolutePath());
                             else
                                 p=new ProcessBuilder("/opt/local/bin/convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",files.get(prog).getAbsolutePath());
                         }
