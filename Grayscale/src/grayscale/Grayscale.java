@@ -69,7 +69,8 @@ public class Progress extends Thread{
         Platform.runLater(() -> info.setText("Identifying..."));
         try {           
             for(prog=0;prog<files.size() && !error;prog++){
-                double d=(((prog+1)/2)/(double)files.size());                
+                double d=(((prog+1)/2.0)/(double)files.size());  
+                System.out.println("i "+d);
                 Platform.runLater(() -> pb.setProgress(d));
                 if("Linux".equals(System.getProperty("os.name")))
                     p=new ProcessBuilder("identify",files.get(prog).getAbsolutePath());
@@ -97,7 +98,8 @@ public class Progress extends Thread{
                 Platform.runLater(() -> info.setText("Converting..."));
             }
             for(prog=0;prog<files.size() && !error;prog++){                                                       
-                        double d=(((prog+1)/2)/(double)files.size())+((double)files.size()/2)/files.size();                          
+                        double d=(((prog+1)/2.0)/(double)files.size())+0.5;
+                        System.out.println(d);
                         Platform.runLater(() -> pb.setProgress(d));
                         //System.out.println(!check.isSelected());
                         if(!check.isSelected()){
