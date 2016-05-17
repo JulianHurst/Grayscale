@@ -71,8 +71,10 @@ public class Progress extends Thread{
             for(prog=0;prog<files.size() && !error;prog++){
                 double d=(((prog+1)/2)/(double)files.size());                
                 Platform.runLater(() -> pb.setProgress(d));
-                if("Linux".equals(System.getProperty("os.name")) || System.getProperty("os.name").contains("Windows"))
+                if("Linux".equals(System.getProperty("os.name")))
                     p=new ProcessBuilder("identify",files.get(prog).getAbsolutePath());
+                else if (System.getProperty("os.name").contains("Windows"))
+                    p=new ProcessBuilder("magick","identify",files.get(prog).getAbsolutePath());
                 else
                     p=new ProcessBuilder("/opt/local/bin/identify",files.get(prog).getAbsolutePath());                
                 proc=p.start();
@@ -114,7 +116,7 @@ public class Progress extends Thread{
                             if("Linux".equals(System.getProperty("os.name")))
                                 p=new ProcessBuilder("convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",path+"/Gray-"+files.get(prog).toPath().getFileName());
                             else if(System.getProperty("os.name").contains("Windows"))
-                                p=new ProcessBuilder("magick",files.get(prog).getAbsolutePath(),"-colorspace","gray",path+"\\Gray-"+files.get(prog).toPath().getFileName());
+                                p=new ProcessBuilder("magick","convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",path+"\\Gray-"+files.get(prog).toPath().getFileName());
                             else
                                 p=new ProcessBuilder("/opt/local/bin/convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",path+"/Gray-"+files.get(prog).toPath().getFileName());
                         }
