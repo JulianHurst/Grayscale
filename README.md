@@ -2,7 +2,8 @@
 A frontend specifically for ImageMagicks convert -colorspace gray option.
 
 #Windows Users
-Since a convert command already exists in windows ([http://ss64.com/nt/convert.html](http://ss64.com/nt/convert.html)), Windows users MUST download convert-to-convertim.bat and execute it as administrator or manually rename ImageMagicks convert.exe to convert-im.exe after having installed ImageMagick in order for Grayscale to work.  
+ImageMagick is currently undergoing changes that may render Grayscale incompatible with the latest versions. The latest compatible ImageMagick version will be listed in the changes section of each Grayscale release.   
+Please contact me at julian.hurst@laposte.net to report any problems.  
   
 #Requirements
 ##ImageMagick
