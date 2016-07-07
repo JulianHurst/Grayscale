@@ -5,6 +5,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Application;
@@ -53,7 +59,8 @@ public class Progress extends Thread{
     public void run(){
                 ProcessBuilder p;   
         Process proc;        
-        String noext,ext;   
+        //String noext,ext;
+        ArrayList<File> omit = new ArrayList<>();
         boolean error=false;
         if(files.isEmpty()){
             Platform.runLater(() -> {
@@ -80,73 +87,77 @@ public class Progress extends Thread{
                     p=new ProcessBuilder("/opt/local/bin/identify",files.get(prog).getAbsolutePath());                
                 proc=p.start();
                 proc.waitFor();
-                if(proc.exitValue()!=0){
-                    error=true;
+                if(proc.exitValue()!=0){                    
                     int i=prog;
-                    Platform.runLater(() -> {
+                    final FutureTask query = new FutureTask(() -> {
                         alert= new Alert(AlertType.WARNING);
                         alert.setHeaderText("Not an image file !");
                         alert.setContentText("The file "+files.get(i).getAbsolutePath()+" is not an image file or is corrupted !");
                         alert.setResizable(true);
-                        alert.showAndWait();
-                        Platform.runLater(() -> pb.setVisible(false));
-                    });
+                        alert.showAndWait();  
+                        return null;
+                    });                   
+                    Platform.runLater(query);
+                    try {
+                        query.get();
+                    } catch (InterruptedException | ExecutionException ex) {
+                        Logger.getLogger(Grayscale.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    omit.add(files.get(i));
                 }
-            }            
-            if(!error){
-                Platform.runLater(() -> pb.setVisible(true));
-                Platform.runLater(() -> info.setText("Converting..."));
-            }
+            }                        
             for(prog=0;prog<files.size() && !error;prog++){                                                       
                         double d=(((prog+1)/2.0)/(double)files.size())+0.5;
                         System.out.println(d);
                         Platform.runLater(() -> pb.setProgress(d));
                         //System.out.println(!check.isSelected());
-                        if(!check.isSelected()){
-                            /*
-                            if(files.get(prog).getAbsolutePath().contains(".")){
-                                noext=files.get(prog).getAbsolutePath().substring(0, files.get(prog).getAbsolutePath().lastIndexOf('.'));
-                                ext=files.get(prog).getAbsolutePath().substring(files.get(prog).getAbsolutePath().lastIndexOf('.'), files.get(prog).getAbsolutePath().length());
+                        if(!omit.contains(files.get(prog))){
+                            if(!check.isSelected()){
+                                /*
+                                if(files.get(prog).getAbsolutePath().contains(".")){
+                                    noext=files.get(prog).getAbsolutePath().substring(0, files.get(prog).getAbsolutePath().lastIndexOf('.'));
+                                    ext=files.get(prog).getAbsolutePath().substring(files.get(prog).getAbsolutePath().lastIndexOf('.'), files.get(prog).getAbsolutePath().length());
+                                }
+                                else{
+                                    noext=files.get(prog).getAbsolutePath();
+                                    ext="";
+                                }
+                                */
+                                String natdir=files.get(prog).getAbsoluteFile().toString();
+                                String path=natdir.substring(0,natdir.lastIndexOf(File.separator));
+                                if("Linux".equals(System.getProperty("os.name")))
+                                    p=new ProcessBuilder("convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",path+"/Gray-"+files.get(prog).toPath().getFileName());
+                                else if(System.getProperty("os.name").contains("Windows"))
+                                    p=new ProcessBuilder("magick","convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",path+"\\Gray-"+files.get(prog).toPath().getFileName());
+                                else
+                                    p=new ProcessBuilder("/opt/local/bin/convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",path+"/Gray-"+files.get(prog).toPath().getFileName());
                             }
-                            else{
-                                noext=files.get(prog).getAbsolutePath();
-                                ext="";
+                            else{                            
+                                if("Linux".equals(System.getProperty("os.name")))
+                                    p=new ProcessBuilder("convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",files.get(prog).getAbsolutePath());
+                                else if(System.getProperty("os.name").contains("Windows"))
+                                    p=new ProcessBuilder("magick","convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",files.get(prog).getAbsolutePath());
+                                else
+                                    p=new ProcessBuilder("/opt/local/bin/convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",files.get(prog).getAbsolutePath());
                             }
-                            */
-                            String natdir=files.get(prog).getAbsoluteFile().toString();
-                            String path=natdir.substring(0,natdir.lastIndexOf(File.separator));
-                            if("Linux".equals(System.getProperty("os.name")))
-                                p=new ProcessBuilder("convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",path+"/Gray-"+files.get(prog).toPath().getFileName());
-                            else if(System.getProperty("os.name").contains("Windows"))
-                                p=new ProcessBuilder("magick","convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",path+"\\Gray-"+files.get(prog).toPath().getFileName());
-                            else
-                                p=new ProcessBuilder("/opt/local/bin/convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",path+"/Gray-"+files.get(prog).toPath().getFileName());
+                            proc=p.start();
+                            proc.waitFor();                        
+                            if(proc.exitValue()!=0){
+                                error=true;
+                                int i=prog;
+                                int b;
+                                while((b=proc.getErrorStream().read())!=-1)
+                                    System.out.print((char)b);
+                                String file=files.get(i).getAbsolutePath();
+                                Platform.runLater(() -> {
+                                    alert= new Alert(AlertType.ERROR);
+                                    alert.setResizable(true);
+                                    alert.setHeaderText("Error during conversion !");
+                                    alert.setContentText("The file "+file+" could not be converted ! Check if the file is not an image file and/or is not corrupted. If this error still appears ImageMagick may not be able to convert this image.");
+                                    alert.showAndWait();
+                                });                                                
+                            }
                         }
-                        else{                            
-                            if("Linux".equals(System.getProperty("os.name")))
-                                p=new ProcessBuilder("convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",files.get(prog).getAbsolutePath());
-                            else if(System.getProperty("os.name").contains("Windows"))
-                                p=new ProcessBuilder("magick","convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",files.get(prog).getAbsolutePath());
-                            else
-                                p=new ProcessBuilder("/opt/local/bin/convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",files.get(prog).getAbsolutePath());
-                        }
-                        proc=p.start();
-                        proc.waitFor();                        
-                        if(proc.exitValue()!=0){
-                            error=true;
-                            int i=prog;
-                            int b;
-                            while((b=proc.getErrorStream().read())!=-1)
-                                System.out.print((char)b);
-                            String file=files.get(i).getAbsolutePath();
-                            Platform.runLater(() -> {
-                                alert= new Alert(AlertType.ERROR);
-                                alert.setResizable(true);
-                                alert.setHeaderText("Error during conversion !");
-                                alert.setContentText("The file "+file+" could not be converted ! Check if the file is not an image file and/or is not corrupted. If this error still appears ImageMagick may not be able to convert this image.");
-                                alert.showAndWait();
-                            });                                                
-                        }                                                  
             }                            
         } catch (IOException | InterruptedException ex) {
                     Logger.getLogger(Grayscale.class.getName()).log(Level.SEVERE, null, ex);    
