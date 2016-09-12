@@ -63,7 +63,7 @@ public class Progress extends Thread{
         ArrayList<File> omit = new ArrayList<>();
         boolean error=false;
         if(files.isEmpty()){
-            Platform.runLater(() -> {
+            Platform.runLater(() -> { 
                 alert=new Alert(AlertType.WARNING);
                 alert.setResizable(true);
                 alert.setHeaderText("No files !");
@@ -95,7 +95,7 @@ public class Progress extends Thread{
                         alert.setContentText("The file "+files.get(i).getAbsolutePath()+" is not an image file or is corrupted !");
                         alert.setResizable(true);
                         alert.showAndWait();  
-                        return null;
+                        return null;                     
                     });                   
                     Platform.runLater(query);
                     try {
@@ -130,7 +130,7 @@ public class Progress extends Thread{
                                 else if(System.getProperty("os.name").contains("Windows"))
                                     p=new ProcessBuilder("magick","convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",path+"\\Gray-"+files.get(prog).toPath().getFileName());
                                 else
-                                    p=new ProcessBuilder("/opt/local/bin/convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",path+"/Gray-"+files.get(prog).toPath().getFileName());
+                                    p=new ProcessBuilder("/opt/local/bin/convert",files.get(prog).getAbsolutePath(),"-threshold","20%",path+"/BaW-"+files.get(prog).toPath().getFileName());
                             }
                             else{                            
                                 if("Linux".equals(System.getProperty("os.name")))
@@ -138,7 +138,7 @@ public class Progress extends Thread{
                                 else if(System.getProperty("os.name").contains("Windows"))
                                     p=new ProcessBuilder("magick","convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",files.get(prog).getAbsolutePath());
                                 else
-                                    p=new ProcessBuilder("/opt/local/bin/convert",files.get(prog).getAbsolutePath(),"-colorspace","gray",files.get(prog).getAbsolutePath());
+                                    p=new ProcessBuilder("/opt/local/bin/convert",files.get(prog).getAbsolutePath(),"-threshold","20%",files.get(prog).getAbsolutePath());
                             }
                             proc=p.start();
                             proc.waitFor();                        
